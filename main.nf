@@ -16,14 +16,14 @@ process GET_URI {
 
 process BUILD_CONTAINER {
     input:
-    path step2_result
+    val uri
 
     output:
-    path "final_output.txt"
+    stdout
 
     script:
     """
-    bash ${projectDir}/scripts/make_module.sh "${step2_result}" "${output_dir}" > final_output.txt
+    bash ${projectDir}/scripts/make_module.sh "${uri}" > final_output.txt
     """
 }
 
@@ -46,5 +46,5 @@ workflow {
 
     // Chain the processes
     uri_ch  = GET_URI(names_ch).map { it.trim() }
-    step2_out  = BUILD_CONTAINER(uri_ch)
+    BUILD_CONTAINER(uri_ch)
 }
