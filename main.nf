@@ -46,5 +46,5 @@ workflow {
 
     // Chain the processes
     uri_ch  = GET_URI(names_ch).map { it.trim() }
-    step2_out  = BUILD_CONTAINER(step1_out)
+    step2_out  = BUILD_CONTAINER(uri_ch)
 }
