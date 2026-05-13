@@ -1,17 +1,13 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl=2
 
-process BASH_STEP_1 {
+process GET_URI {
     input:
-    val input_file
-    val threshold
-
-    output:
-    path "step1_output.txt"
+    val names_ch // these can be used as CLI args with "${val_name}"
 
     script:
     """
-    bash ${projectDir}/scripts/step1.sh "${input_file}" "${threshold}" > step1_output.txt
+    bash ${projectDir}/scripts/run_get_container_uri.sh "${names_ch}"
     """
 }
 
@@ -60,7 +56,7 @@ workflow {
     }
 
     // Chain the processes
-    step1_out  = BASH_STEP_1(input_ch, thresh_ch)
+    step1_out  = GET_URI(names_ch)
     step2_out  = PYTHON_STEP(step1_out)
     BASH_STEP_2(step2_out, outdir_ch)
 }
