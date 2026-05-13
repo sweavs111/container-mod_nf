@@ -43,10 +43,21 @@ process BASH_STEP_2 {
 }
 
 workflow {
-    // Create channels from params
-    input_ch = Channel.value(params.input_file)
-    thresh_ch = Channel.value(params.threshold)
-    outdir_ch = Channel.value(params.output_dir)
+    // check for a non-empty "container" parameter
+    if (!params.container) {
+        error "Please provide --input <container_name or file_path>"
+    }
+
+    // if --file, treat the "container" parameter as an file with a list of containers
+    if (params.file) {
+        names_ch = channel
+            .fromPath(params.container)
+            .splitText()
+            .map { it.trim() }
+            .filter { it }
+    } else {
+        names_ch = channel.value(params.container)
+    }
 
     // Chain the processes
     step1_out  = BASH_STEP_1(input_ch, thresh_ch)
