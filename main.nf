@@ -14,23 +14,9 @@ process GET_URI {
     """
 }
 
-process PYTHON_STEP {
-    input:
-    path step1_result
-
-    output:
-    path "step2_output.txt"
-
-    script:
-    """
-    python3 ${projectDir}/scripts/process.py "${step1_result}" > step2_output.txt
-    """
-}
-
-process BASH_STEP_2 {
+process BUILD_CONTAINER {
     input:
     path step2_result
-    val output_dir
 
     output:
     path "final_output.txt"
@@ -59,7 +45,6 @@ workflow {
     }
 
     // Chain the processes
-    step1_out  = GET_URI(names_ch)
-    step2_out  = PYTHON_STEP(step1_out)
-    BASH_STEP_2(step2_out, outdir_ch)
+    uri_ch  = GET_URI(names_ch).map { it.trim() }
+    step2_out  = BUILD_CONTAINER(step1_out)
 }
