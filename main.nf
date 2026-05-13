@@ -5,9 +5,12 @@ process GET_URI {
     input:
     val names_ch // these can be used as CLI args with "${val_name}"
 
+    output:
+    stdout
+
     script:
     """
-    bash ${projectDir}/scripts/run_get_container_uri.sh "${names_ch}"
+    bash ${projectDir}/scripts/get_container_uri.sh "${names_ch}"
     """
 }
 
