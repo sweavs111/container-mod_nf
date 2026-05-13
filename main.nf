@@ -23,7 +23,7 @@ process BUILD_CONTAINER {
 
     script:
     """
-    bash ${projectDir}/scripts/step2.sh "${step2_result}" "${output_dir}" > final_output.txt
+    bash ${projectDir}/scripts/make_module.sh "${step2_result}" "${output_dir}" > final_output.txt
     """
 }
 
