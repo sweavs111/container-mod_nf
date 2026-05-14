@@ -46,7 +46,9 @@ process SUMMARIZE {
             \\[OK\\]*|\\[Already*)  echo "\$line" >> "\${LOG_DIR}/success.\${TIMESTAMP}.log" ;;
             \\[ERR\\]*)             echo "\$line" >> "\${LOG_DIR}/error.\${TIMESTAMP}.log"   ;;
         esac
-    done <<< ${results.join('\n')}
+    done <<'RESULTS_EOF'
+${results.join('\n')}
+RESULTS_EOF
 
     echo "=== DONE ==="
     echo "Successes: \$(wc -l < "\${LOG_DIR}/success.\${TIMESTAMP}.log")"
