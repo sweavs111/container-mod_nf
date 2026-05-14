@@ -11,7 +11,7 @@ process GET_URI {
 
     script:
     """
-    bash ${projectDir}/scripts/get_container_uri.sh "${names}" "${version}"
+    get_container_uri.sh "${names}" "${version}"
     """
 }
 
@@ -19,13 +19,14 @@ process BUILD_CONTAINER {
     input:
     val uri
     val profile
+    path config_file
 
     output:
     stdout
 
     script:
     """
-    bash ${projectDir}/scripts/make_module.sh "${uri}" "${profile}"
+    make_module.sh "${uri}" "${profile}"
     """
 }
 
@@ -75,9 +76,10 @@ workflow {
     //Add options
     version_ch = channel.value(params.version)
     profile_ch = channel.value(params.profile)
+    config_ch  = channel.fromPath("${projectDir}/scripts/config_mm.sh")
 
     // Chain the processes
     uri_ch  = GET_URI(names_ch, version_ch).map { it.trim() }
-    status_ch = BUILD_CONTAINER(uri_ch, profile_ch).map { it.trim() }
+    status_ch = BUILD_CONTAINER(uri_ch, profile_ch, config_ch).map { it.trim() }
     SUMMARIZE(status_ch.collect())
 }
