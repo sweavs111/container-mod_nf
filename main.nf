@@ -3,28 +3,52 @@ nextflow.enable.dsl=2
 
 process GET_URI {
     input:
-    val names_ch // these can be used as CLI args with "${val_name}"
-    val version_ch // package version can be specified, if not, latest is chosen
+    val names // these can be used as CLI args with "${val_name}"
+    val version // package version can be specified, if not, latest is chosen
 
     output:
     stdout
 
     script:
     """
-    bash ${projectDir}/scripts/get_container_uri.sh "${names_ch}" "${version_ch}"
+    bash ${projectDir}/scripts/get_container_uri.sh "${names}" "${version}"
     """
 }
 
 process BUILD_CONTAINER {
     input:
     val uri
+    val profile
 
     output:
     stdout
 
     script:
     """
-    bash ${projectDir}/scripts/make_module.sh "${uri}"
+    bash ${projectDir}/scripts/make_module.sh "${uri}" "${profile}"
+    """
+}
+
+process SUMMARIZE {
+    input:
+    val results
+
+    script:
+    """
+    LOG_DIR="${params.log_dir}"
+    mkdir -p "\$LOG_DIR"
+    touch "\${LOG_DIR}/success.log" "\${LOG_DIR}/error.log"
+
+    while read -r line; do
+        case "\$line" in
+            \\[OK\\]*|\\[Already*)  echo "\$line" >> "\${LOG_DIR}/success.log" ;;
+            \\[ERR\\]*)             echo "\$line" >> "\${LOG_DIR}/error.log"   ;;
+        esac
+    done <<< ${results.join('\n')}
+
+    echo "=== DONE ==="
+    echo "Successes: \$(wc -l < "\${LOG_DIR}/success.log")"
+    echo "Errors:    \$(wc -l < "\${LOG_DIR}/error.log")"
     """
 }
 
@@ -32,6 +56,8 @@ workflow {
     // check for a non-empty "container" parameter
     if (!params.container) {
         error "Please provide --input <container_name or file_path>"
+    } else if (!params.log_dir) {
+        error "Please provide log file directory: --log_dir <path/to/dir>"
     }
 
     // if --file, treat the "container" parameter as an file with a list of containers
@@ -44,9 +70,13 @@ workflow {
     } else {
         names_ch = channel.value(params.container)
     }
+
+    //Add options
     version_ch = channel.value(params.version)
+    profile_ch = channel.value(params.profile)
 
     // Chain the processes
     uri_ch  = GET_URI(names_ch, version_ch).map { it.trim() }
-    BUILD_CONTAINER(uri_ch)
+    status_ch = BUILD_CONTAINER(uri_ch, profile_ch).map { it.trim() }
+    SUMMARIZE(status_ch.collect())
 }
