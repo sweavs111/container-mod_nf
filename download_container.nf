@@ -109,7 +109,7 @@ workflow {
     }
 
     //Add options
-    version_ch = channel.value(params.version)
+    version_ch = channel.value(params.version ?: '')
     profile_ch = channel.value(params.profile)
     config_ch  = channel.fromPath("${projectDir}/scripts/config_mm.sh")
 
