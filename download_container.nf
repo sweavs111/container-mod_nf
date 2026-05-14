@@ -62,7 +62,7 @@ workflow {
         |==================================================
         |
         | USAGE:
-        |   nextflow run main.nf [options]
+        |   nextflow run download_container.nf [options]
         |
         | REQUIRED:
         |   --container  <name|file>   Container name (e.g. samtools) or path to a
@@ -76,9 +76,9 @@ workflow {
         |   --help                     Show this message and exit
         |
         | EXAMPLES:
-        |   nextflow run main.nf --container samtools --log_dir logs/
-        |   nextflow run main.nf --container samtools --version 1.17 --log_dir logs/
-        |   nextflow run main.nf --container containers.txt --file --log_dir logs/
+        |   nextflow run download_container.nf --container samtools --log_dir logs/
+        |   nextflow run download_container.nf --container samtools --version 1.17 --log_dir logs/
+        |   nextflow run download_container.nf --container containers.txt --file --log_dir logs/
         |==================================================
         """.stripMargin()
         exit 0
@@ -86,7 +86,7 @@ workflow {
 
     // check for a non-empty "container" parameter
     if (!params.container) {
-        error "Please provide --input <container_name or file_path>"
+        error "Please provide --input <container_name or file_path>\nUse: nextflow run download_container --help"
     } else if (!params.log_dir) {
         error "Please provide log file directory: --log_dir <path/to/dir>"
     }
