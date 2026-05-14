@@ -31,28 +31,32 @@ process BUILD_CONTAINER {
 }
 
 process SUMMARIZE {
+    publishDir params.log_dir, mode: 'copy'
+
     input:
     val results
+
+    output:
+    path "*.log"
+    stdout emit: summary
 
     script:
     """
     TIMESTAMP=\$(date +%Y%m%d_%H%M%S)
-    LOG_DIR="${params.log_dir}"
-    mkdir -p "\$LOG_DIR"
-    touch "\${LOG_DIR}/success.\${TIMESTAMP}.log" "\${LOG_DIR}/error.\${TIMESTAMP}.log"
+    touch "success.\${TIMESTAMP}.log" "error.\${TIMESTAMP}.log"
 
     while read -r line; do
         case "\$line" in
-            \\[OK\\]*|\\[Already*)  echo "\$line" >> "\${LOG_DIR}/success.\${TIMESTAMP}.log" ;;
-            \\[ERR\\]*)             echo "\$line" >> "\${LOG_DIR}/error.\${TIMESTAMP}.log"   ;;
+            \\[OK\\]*|\\[Already*)  echo "\$line" >> "success.\${TIMESTAMP}.log" ;;
+            \\[ERR\\]*)             echo "\$line" >> "error.\${TIMESTAMP}.log"   ;;
         esac
     done <<'RESULTS_EOF'
 ${results.join('\n')}
 RESULTS_EOF
 
     echo "=== DONE ==="
-    echo "Successes: \$(wc -l < "\${LOG_DIR}/success.\${TIMESTAMP}.log")"
-    echo "Errors:    \$(wc -l < "\${LOG_DIR}/error.\${TIMESTAMP}.log")"
+    echo "Successes: \$(wc -l < "success.\${TIMESTAMP}.log")"
+    echo "Errors:    \$(wc -l < "error.\${TIMESTAMP}.log")"
     """
 }
 
@@ -112,5 +116,5 @@ workflow {
     // Chain the processes
     uri_ch  = GET_URI(names_ch, version_ch).map { uri -> uri.trim() }
     status_ch = BUILD_CONTAINER(uri_ch, profile_ch, config_ch).map { status -> status.trim() }
-    SUMMARIZE(status_ch.collect())
+    SUMMARIZE(status_ch.collect()).summary.view()
 }
