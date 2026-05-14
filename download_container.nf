@@ -36,7 +36,7 @@ process SUMMARIZE {
 
     script:
     """
-    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    TIMESTAMP=\$(date +%Y%m%d_%H%M%S)
     LOG_DIR="${params.log_dir}"
     mkdir -p "\$LOG_DIR"
     touch "\${LOG_DIR}/success.\${TIMESTAMP}.log" "\${LOG_DIR}/error.\${TIMESTAMP}.log"
