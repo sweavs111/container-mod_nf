@@ -60,37 +60,8 @@ download_container.nf
 
 ### Hidden config file: `scripts/config_mm.sh`
 
-`make_module.sh` sources `scripts/config_mm.sh` at runtime. This file is **not committed** to the repository because the paths it contains are specific to each HPC system. You must create it before running the pipeline.
+`make_module.sh` sources `scripts/config_mm.sh` at runtime. If running on a different system, you must create / alter it before running the pipeline.
 
-**Template:**
-
-```bash
-# scripts/config_mm.sh
-
-# Path to the container-mod executable
-CONTAINER_MOD="/path/to/container-mod"
-
-# Path to GNU parallel
-PARALLEL="/path/to/parallel"
-
-# container-mod profile (must match a profile defined in your container-mod installation)
-MY_PROFILE="brc"
-
-# Directory where .sif image files are stored (checked before pulling to avoid re-downloads)
-IMAGE_PATH="/path/to/images"
-
-# Base directory for container-mod log output
-LOG_PATH="/path/to/logs"
-```
-
-On Hazel (BRC), the production values are:
-
-| Variable        | Path                                                                                  |
-|-----------------|---------------------------------------------------------------------------------------|
-| `CONTAINER_MOD` | `/rs1/shares/brc/admin/tools/container-mod_v1/container-mod`                         |
-| `PARALLEL`      | `/rs1/shares/brc/admin/tools/parallel-20250922/bin/parallel`                         |
-| `IMAGE_PATH`    | `/rs1/shares/brc/admin/containers/images`                                             |
-| `LOG_PATH`      | `/rs1/shares/brc/admin/containers/add_module/make_module/container-mod_logs`          |
 
 ### Script reference
 
@@ -104,7 +75,6 @@ On Hazel (BRC), the production values are:
 
 - Nextflow ≥ 23.x with DSL2
 - `apptainer` module available on the compute node
-- GNU `parallel` (path set in `config_mm.sh`)
 - `container-mod` installed and accessible (path set in `config_mm.sh`)
 - Python 3 (for `parse_biocontainer.py`)
-- Internet access from compute nodes to `api.biocontainers.pro`
+- Internet access from nodes to `api.biocontainers.pro`
