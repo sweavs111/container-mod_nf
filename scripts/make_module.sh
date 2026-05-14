@@ -26,7 +26,5 @@ if check_exist "$URI"; then
 elif OUTPUT=$($CONTAINER_MOD pipe -t --profile "$MY_PROFILE" "$URI" 2>&1); then
     echo "[OK]  $URI"
 else
-    echo "$URI" >> "${LOG_DIR}/error.log"
-    echo "[ERR] $URI"
-    echo "$OUTPUT" > "${LOG_DIR}/error_$(echo "$URI" | tr '/:' '__').txt"
+    echo "[ERR] $URI -- $OUTPUT"
 fi
