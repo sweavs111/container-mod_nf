@@ -55,6 +55,35 @@ process SUMMARIZE {
 }
 
 workflow {
+    if (params.help) {
+        log.info """
+        |==================================================
+        | container-mod-nf  --  BRC Container Installer
+        |==================================================
+        |
+        | USAGE:
+        |   nextflow run main.nf [options]
+        |
+        | REQUIRED:
+        |   --container  <name|file>   Container name (e.g. samtools) or path to a
+        |                              file listing containers (one per line)
+        |   --log_dir   <path>         Directory to write success/error log files
+        |
+        | OPTIONAL:
+        |   --version   <string>       Pin a specific tool version (default: latest)
+        |   --profile   <string>       container-mod profile to use (default: brc)
+        |   --file                     Treat --container as a file path (flag, no value)
+        |   --help                     Show this message and exit
+        |
+        | EXAMPLES:
+        |   nextflow run main.nf --container samtools --log_dir logs/
+        |   nextflow run main.nf --container samtools --version 1.17 --log_dir logs/
+        |   nextflow run main.nf --container containers.txt --file --log_dir logs/
+        |==================================================
+        """.stripMargin()
+        exit 0
+    }
+
     // check for a non-empty "container" parameter
     if (!params.container) {
         error "Please provide --input <container_name or file_path>"
