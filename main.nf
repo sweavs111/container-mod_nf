@@ -67,8 +67,8 @@ workflow {
         names_ch = channel
             .fromPath(params.container)
             .splitText()
-            .map { row -> row.trim() }
-            .filter { row -> row }
+            .map { name -> name.trim() }
+            .filter { it }
     } else {
         names_ch = channel.value(params.container)
     }
@@ -79,7 +79,7 @@ workflow {
     config_ch  = channel.fromPath("${projectDir}/scripts/config_mm.sh")
 
     // Chain the processes
-    uri_ch  = GET_URI(names_ch, version_ch).map { row -> row.trim() }
-    status_ch = BUILD_CONTAINER(uri_ch, profile_ch, config_ch).map { row -> row.trim() }
+    uri_ch  = GET_URI(names_ch, version_ch).map { uri -> uri.trim() }
+    status_ch = BUILD_CONTAINER(uri_ch, profile_ch, config_ch).map { status -> status.trim() }
     SUMMARIZE(status_ch.collect())
 }
