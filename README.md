@@ -49,9 +49,13 @@ download_container.nf
   │     bin/get_container_uri.sh  →  bin/parse_biocontainer.py
   │     Queries the BioContainers REST API and returns a docker:// URI
   │
-  └── BUILD_CONTAINER
-        bin/make_module.sh
-        Calls `container-mod pipe` to pull the image and register it as a module
+  ├──  BUILD_CONTAINER
+  │     bin/make_module.sh
+  │     Calls `container-mod pipe` to pull the image and register it as a module
+  │
+  └── SUMMARIZE
+        Creates summary log files
+        Prints summary statistics to terminal
 ```
 
 ---
