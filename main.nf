@@ -35,20 +35,21 @@ process SUMMARIZE {
 
     script:
     """
+    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     LOG_DIR="${params.log_dir}"
     mkdir -p "\$LOG_DIR"
-    touch "\${LOG_DIR}/success.log" "\${LOG_DIR}/error.log"
+    touch "\${LOG_DIR}/success.\${TIMESTAMP}.log" "\${LOG_DIR}/error.\${TIMESTAMP}.log"
 
     while read -r line; do
         case "\$line" in
-            \\[OK\\]*|\\[Already*)  echo "\$line" >> "\${LOG_DIR}/success.log" ;;
-            \\[ERR\\]*)             echo "\$line" >> "\${LOG_DIR}/error.log"   ;;
+            \\[OK\\]*|\\[Already*)  echo "\$line" >> "\${LOG_DIR}/success.\${TIMESTAMP}.log" ;;
+            \\[ERR\\]*)             echo "\$line" >> "\${LOG_DIR}/error.\${TIMESTAMP}.log"   ;;
         esac
     done <<< ${results.join('\n')}
 
     echo "=== DONE ==="
-    echo "Successes: \$(wc -l < "\${LOG_DIR}/success.log")"
-    echo "Errors:    \$(wc -l < "\${LOG_DIR}/error.log")"
+    echo "Successes: \$(wc -l < "\${LOG_DIR}/success.\${TIMESTAMP}.log")"
+    echo "Errors:    \$(wc -l < "\${LOG_DIR}/error.\${TIMESTAMP}.log")"
     """
 }
 
