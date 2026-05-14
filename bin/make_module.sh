@@ -4,7 +4,7 @@
 # -------------------------
 
 # --- load config ---
-source config_mm.sh
+source ./config_mm.sh
 
 # --- Environments ---
 module load apptainer
