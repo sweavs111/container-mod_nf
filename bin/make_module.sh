@@ -7,7 +7,7 @@
 source ./config_mm.sh
 
 # --- Environments ---
-module load apptainer
+module load apptainer > /dev/null 2>&1
 
 # --- Variables ---
 URI="$1"
