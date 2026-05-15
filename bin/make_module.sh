@@ -1,6 +1,6 @@
 #!/bin/bash
 # -------------------------
-# Download containers onto the BRC module space 
+# Download containers onto the BRC module space
 # -------------------------
 
 # --- load config ---
@@ -13,11 +13,14 @@ module load apptainer > /dev/null 2>&1
 URI="$1"
 MY_PROFILE="$2"
 
+# Source the profile to get profile-specific paths (e.g. IMG_OUTDIR)
+source "$(dirname "$CONTAINER_MOD")/profiles/$MY_PROFILE"
+
 # --- Exist function ---
 check_exist() {
 	local STRIP=$(echo $1 | sed 's|.*//||' | tr '/' '_')
 	STRIP+=".sif"
-	[ -f $IMAGE_PATH/$STRIP ]
+	[ -f "$IMG_OUTDIR/$STRIP" ]
 }
 
 # --- Download ---
