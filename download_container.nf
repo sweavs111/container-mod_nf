@@ -92,7 +92,7 @@ workflow {
 
     // check for a non-empty "container" parameter
     if (!params.container) {
-        error "Please provide --input <container_name or file_path>\nUse: nextflow run download_container --help"
+        error "Please provide --container <container_name or file_path>\nUse: nextflow run download_container.nf --help"
     } else if (!params.log_dir) {
         error "Please provide log file directory: --log_dir <path/to/dir>"
     }
