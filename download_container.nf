@@ -79,6 +79,7 @@ workflow {
         |   --version   <string>       Pin a specific tool version (default: latest)
         |   --profile   <string>       container-mod profile to use (default: brc)
         |   --file                     Treat --container as a file path (flag, no value)
+        |   --uri_only                 Resolve URIs only; skip image download (flag, no value)
         |   --help                     Show this message and exit
         |
         | EXAMPLES:
@@ -123,12 +124,12 @@ workflow {
         .set { uri_ch }
 
     if (params.uri_only) {
-        uri_ch.valid = uri_ch.valid.map { it -> "[OK]" + it }
-        status_ch = uri_ch.valid.mix(uri_ch.err).collect()
+        uri_status_ch = uri_ch.valid.map { "[OK] ${it}" }
+        status_ch = uri_status_ch.mix(uri_ch.err).collect()
     } else {
         status_ch = BUILD_CONTAINER(uri_ch.valid, profile_ch, config_ch).map { it.trim() }
-        status_ch = status_ch.mix(uri_ch.err).collect()
+                        .mix(uri_ch.err).collect()
     }
 
-    SUMMARIZE(status_ch.summary.view())
+    SUMMARIZE(status_ch).summary.view()
 }
