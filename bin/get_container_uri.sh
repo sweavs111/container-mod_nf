@@ -42,14 +42,6 @@ try_dockerhub() {
     --source dockerhub --tool "${TOOL}" "${VERSION}"
 }
 
-try_apptainer() {
-  if [ -n "${VERSION}" ]; then
-    echo "docker://quay.io/biocontainers/${TOOL}:${VERSION}"
-  else
-    echo "docker://quay.io/biocontainers/${TOOL}"
-  fi
-}
-
 # --- Main: try each source in order, suppress per-source stderr ---
 URI=""
 
@@ -66,7 +58,6 @@ echo "[WARN] quay.io: no result for '${TOOL}', trying Docker Hub..." >&2
 if URI=$(try_dockerhub 2>/dev/null); then
   echo "$URI"; exit 0
 fi
-echo "[WARN] Docker Hub: no result for '${TOOL}', falling back to direct URI..." >&2
 
-URI=$(try_apptainer)
-echo "$URI"
+echo "Error: '${TOOL}' not found in BioContainers API, quay.io, or Docker Hub" >&2
+exit 1
