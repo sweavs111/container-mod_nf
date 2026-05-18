@@ -64,7 +64,7 @@ workflow {
     if (params.help) {
         log.info """
         |==================================================
-        | container-mod-nf  --  BRC Container Installer
+        | container-mod_nf  --  BRC Container Installer
         |==================================================
         |
         | USAGE:
