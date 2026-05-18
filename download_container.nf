@@ -122,7 +122,13 @@ workflow {
         }
         .set { uri_ch }
 
-    status_ch = BUILD_CONTAINER(uri_ch.valid, profile_ch, config_ch).map { it.trim() }
+    if (params.uri_only) {
+        uri_ch.valid = uri_ch.valid.map { it -> "[OK]" + it }
+        status_ch = uri_ch.valid.mix(uri_ch.err).collect()
+    } else {
+        status_ch = BUILD_CONTAINER(uri_ch.valid, profile_ch, config_ch).map { it.trim() }
+        status_ch = status_ch.mix(uri_ch.err).collect()
+    }
 
-    SUMMARIZE(status_ch.mix(uri_ch.err).collect()).summary.view()
+    SUMMARIZE(status_ch.summary.view())
 }
