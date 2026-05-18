@@ -1,11 +1,8 @@
 #!/bin/bash
-# Usage: get_biocontainer_uri.sh <tool> [version]
-# Example: get_biocontainer_uri.sh samtools
-# Example: get_biocontainer_uri.sh samtools 1.17
+# Usage: get_container_uri.sh <tool> [version]
 
-set -euo pipefail
+set -uo pipefail
 
-# --- Args ---
 TOOL="${1:-}"
 VERSION="${2:-}"
 SCRIPT_DIR="$(dirname "$0")"
@@ -15,23 +12,61 @@ if [ -z "$TOOL" ]; then
   exit 1
 fi
 
-API="https://api.biocontainers.pro/ga4gh/trs/v2/tools"
+BIOCONTAINERS_API="https://api.biocontainers.pro/ga4gh/trs/v2/tools"
+QUAY_API="https://quay.io/api/v1/repository/biocontainers"
+DOCKERHUB_API="https://hub.docker.com/v2/repositories/biocontainers"
 
-# --- Get biocontianer page ---
+try_biocontainers() {
+  local RESPONSE
+  RESPONSE=$(curl -sf "${BIOCONTAINERS_API}/${TOOL}/versions") || return 1
+  [ -n "$RESPONSE" ] || return 1
+  echo "$RESPONSE" | grep -q '"detail"' && return 1
+  echo "$RESPONSE" | python3 "${SCRIPT_DIR}/parse_biocontainer.py" \
+    --source biocontainers "${VERSION}"
+}
 
-RESPONSE=$(curl -s "${API}/${TOOL}/versions")
+try_quay() {
+  local RESPONSE
+  RESPONSE=$(curl -sf "${QUAY_API}/${TOOL}/tag/?limit=100&onlyActiveTags=true") || return 1
+  [ -n "$RESPONSE" ] || return 1
+  echo "$RESPONSE" | grep -q '"error_message"' && return 1
+  echo "$RESPONSE" | python3 "${SCRIPT_DIR}/parse_biocontainer.py" \
+    --source quay --tool "${TOOL}" "${VERSION}"
+}
 
-if [ -z "$RESPONSE" ] || echo "$RESPONSE" | grep -q '"detail"'; then
-  echo "Error: Tool '${TOOL}' not found in BioContainers" >&2
-  exit 1
+try_dockerhub() {
+  local RESPONSE
+  RESPONSE=$(curl -sf "${DOCKERHUB_API}/${TOOL}/tags/?page_size=100") || return 1
+  [ -n "$RESPONSE" ] || return 1
+  echo "$RESPONSE" | python3 "${SCRIPT_DIR}/parse_biocontainer.py" \
+    --source dockerhub --tool "${TOOL}" "${VERSION}"
+}
+
+try_apptainer() {
+  if [ -n "${VERSION}" ]; then
+    echo "docker://quay.io/biocontainers/${TOOL}:${VERSION}"
+  else
+    echo "docker://quay.io/biocontainers/${TOOL}"
+  fi
+}
+
+# --- Main: try each source in order, suppress per-source stderr ---
+URI=""
+
+if URI=$(try_biocontainers 2>/dev/null); then
+  echo "$URI"; exit 0
 fi
+echo "[WARN] BioContainers API: no result for '${TOOL}', trying quay.io..." >&2
 
-# --- Parse versions ---
-
-URI=$(echo "$RESPONSE" | python3 "${SCRIPT_DIR}/parse_biocontainer.py" "$VERSION")
-
-if [ $? -ne 0 ]; then
-  exit 1
+if URI=$(try_quay 2>/dev/null); then
+  echo "$URI"; exit 0
 fi
+echo "[WARN] quay.io: no result for '${TOOL}', trying Docker Hub..." >&2
 
+if URI=$(try_dockerhub 2>/dev/null); then
+  echo "$URI"; exit 0
+fi
+echo "[WARN] Docker Hub: no result for '${TOOL}', falling back to direct URI..." >&2
+
+URI=$(try_apptainer)
 echo "$URI"

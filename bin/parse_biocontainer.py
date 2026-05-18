@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-# Usage: curl ... | python3 parse_biocontainer.py [version]
+# Usage: curl ... | python3 parse_biocontainer.py [version] [--source biocontainers|quay|dockerhub] [--tool TOOL]
 
 import sys
 import json
 import re
+import argparse
 
-# Define sort order for package versions
+
 def parse_version(candidate):
     version_string = candidate[0]  # e.g. "1.17--hd87286a_1" or "v1.7.0_cv3"
 
@@ -22,42 +23,76 @@ def parse_version(candidate):
     return [int(x) for x in re.split(r'[._-]', clean_version) if x.isdigit()]
 
 
-def main():
-    version_filter = sys.argv[1] if len(sys.argv) > 1 else ""
-
-    # Read the biocontainer data from the API call
-    data = json.load(sys.stdin)
-
+def parse_biocontainers(data, version_filter):
     candidates = []
-
-    # Loop through the biocontainer entries
     for entry in data:
-        entry_id = entry.get("id", "")
-
-        # If the entry isn't from docker, filter it out
         for img in entry.get("images", []):
             if img.get("image_type") != "Docker":
                 continue
-
             image_name = img.get("image_name", "")
-            # Extract version from image_name e.g. "quay.io/biocontainers/samtools:0.1.19--h94a8ba4_6"
             version = image_name.split(":")[-1] if ":" in image_name else ""
-
-            # If the version isn't what the user requested, filter out. If no version was requested, everything passes
             if version_filter and not version.startswith(version_filter):
                 continue
-            
-            # Append everything passing filters
             candidates.append((version, image_name))
+    return candidates
+
+
+def parse_quay(data, tool, version_filter):
+    candidates = []
+    for tag in data.get("tags", []):
+        tag_name = tag.get("name", "")
+        if not tag_name:
+            continue
+        if version_filter and not tag_name.startswith(version_filter):
+            continue
+        image_name = f"quay.io/biocontainers/{tool}:{tag_name}"
+        candidates.append((tag_name, image_name))
+    return candidates
+
+
+def parse_dockerhub(data, tool, version_filter):
+    candidates = []
+    for result in data.get("results", []):
+        tag_name = result.get("name", "")
+        if not tag_name:
+            continue
+        if version_filter and not tag_name.startswith(version_filter):
+            continue
+        image_name = f"biocontainers/{tool}:{tag_name}"
+        candidates.append((tag_name, image_name))
+    return candidates
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("version", nargs="?", default="")
+    parser.add_argument("--source", choices=["biocontainers", "quay", "dockerhub"], default="biocontainers")
+    parser.add_argument("--tool", default="")
+    args = parser.parse_args()
+
+    data = json.load(sys.stdin)
+
+    if args.source == "quay":
+        if not args.tool:
+            print("Error: --tool required with --source quay", file=sys.stderr)
+            sys.exit(1)
+        candidates = parse_quay(data, args.tool, args.version)
+    elif args.source == "dockerhub":
+        if not args.tool:
+            print("Error: --tool required with --source dockerhub", file=sys.stderr)
+            sys.exit(1)
+        candidates = parse_dockerhub(data, args.tool, args.version)
+    else:
+        candidates = parse_biocontainers(data, args.version)
 
     if not candidates:
         print("Error: no matching version found", file=sys.stderr)
         sys.exit(1)
 
-    # Sort descending to get the latest build of the matching version
     candidates.sort(key=parse_version, reverse=True)
     _, image_name = candidates[0]
     print("docker://" + image_name)
+
 
 if __name__ == "__main__":
     main()
