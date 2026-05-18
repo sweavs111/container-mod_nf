@@ -59,5 +59,4 @@ if URI=$(try_dockerhub 2>/dev/null); then
   echo "$URI"; exit 0
 fi
 
-echo "Error: '${TOOL}' not found in BioContainers API, quay.io, or Docker Hub" >&2
-exit 1
+echo "[ERR] ${TOOL} -- not found in BioContainers API, quay.io, or Docker Hub"

@@ -113,8 +113,16 @@ workflow {
     profile_ch = channel.value(params.profile)
     config_ch  = channel.fromPath("${projectDir}/scripts/config_mm.sh")
 
-    // Chain the processes
-    uri_ch  = GET_URI(names_ch, version_ch).map { uri -> uri.trim() }
-    status_ch = BUILD_CONTAINER(uri_ch, profile_ch, config_ch).map { status -> status.trim() }
-    SUMMARIZE(status_ch.collect()).summary.view()
+    // Chain the processes; branch [ERR] lines from GET_URI past BUILD_CONTAINER
+    GET_URI(names_ch, version_ch)
+        .map { it.trim() }
+        .branch {
+            err:   it.startsWith('[ERR]')
+            valid: true
+        }
+        .set { uri_ch }
+
+    status_ch = BUILD_CONTAINER(uri_ch.valid, profile_ch, config_ch).map { it.trim() }
+
+    SUMMARIZE(status_ch.mix(uri_ch.err).collect()).summary.view()
 }
