@@ -124,7 +124,7 @@ workflow {
         .set { uri_ch }
 
     if (params.uri_only) {
-        uri_status_ch = uri_ch.valid.map { "[OK] ${it}" }
+        uri_status_ch = uri_ch.valid.map { "[OK] URI resolved: ${it}" }
         status_ch = uri_status_ch.mix(uri_ch.err).collect()
     } else {
         status_ch = BUILD_CONTAINER(uri_ch.valid, profile_ch, config_ch).map { it.trim() }
