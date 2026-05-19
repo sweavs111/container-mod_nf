@@ -20,6 +20,12 @@ nextflow run download_container.nf --container containers.txt --file --log_dir l
 
 # Resolve URIs only — skip image download, just log what was found
 nextflow run download_container.nf --container samtools --uri_only --log_dir logs/
+
+# Skip URI resolution — input is already a pre-formatted docker:// URI
+nextflow run download_container.nf --container docker://quay.io/biocontainers/samtools:1.17--h87f3376_0 --from_uri --log_dir logs/
+
+# Skip URI resolution — input is a file of pre-formatted URIs
+nextflow run download_container.nf --container uris.txt --file --from_uri --log_dir logs/
 ```
 
 ### Parameters
@@ -32,7 +38,18 @@ nextflow run download_container.nf --container samtools --uri_only --log_dir log
 | `--profile`   | No       | `container-mod` profile to use (default: `brc`)                             |
 | `--file`      | No       | Flag — treat `--container` as a file path rather than a container name      |
 | `--uri_only`  | No       | Flag — resolve URIs only; skip image download and log resolved URIs instead |
+| `--from_uri`  | No       | Flag — treat `--container` as a pre-formatted `docker://` URI; skip GET_URI |
 | `--help`      | No       | Print usage and exit                                                        |
+
+### Incompatible flag combinations
+
+The pipeline will exit with an error if any of these pairs are used together:
+
+| Combination | Reason |
+|---|---|
+| `--from_uri --uri_only` | Already have URIs and skipping the build leaves nothing to do |
+| `--from_uri --version` | Version is already encoded in the URI |
+| `--file --version` | A single version string cannot apply to a list of different tools |
 
 ### Output
 
@@ -49,7 +66,7 @@ A summary (count of successes and errors) is also printed to the terminal.
 
 ```
 download_container.nf
-  ├── GET_URI
+  ├── GET_URI  (skipped when --from_uri is set)
   │     bin/get_container_uri.sh  →  bin/parse_biocontainer.py
   │     Queries BioContainers API, then quay.io, then Docker Hub; returns a docker:// URI
   │     [ERR] lines (not found in any source) bypass BUILD_CONTAINER entirely
