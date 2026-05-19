@@ -80,6 +80,8 @@ workflow {
         |   --profile   <string>       container-mod profile to use (default: brc)
         |   --file                     Treat --container as a file path (flag, no value)
         |   --uri_only                 Resolve URIs only; skip image download (flag, no value)
+        |   --from_uri                 Treat --container as a pre-formatted URI or file of URIs;
+        |                              skip GET_URI (flag, no value)
         |   --help                     Show this message and exit
         |
         | EXAMPLES:
@@ -91,45 +93,62 @@ workflow {
         exit 0
     }
 
-    // check for a non-empty "container" parameter
+    // Required parameter checks
     if (!params.container) {
         error "Please provide --container <container_name or file_path>\nUse: nextflow run download_container.nf --help"
     } else if (!params.log_dir) {
         error "Please provide log file directory: --log_dir <path/to/dir>"
     }
 
-    // if --file, treat the "container" parameter as an file with a list of containers
+    // Incompatible flag checks
+    if (params.from_uri && params.uri_only) {
+        error "Incompatible options: --from_uri and --uri_only cannot be used together"
+    }
+    if (params.from_uri && params.version) {
+        error "Incompatible options: --from_uri and --version cannot be used together (version is already encoded in the URI)"
+    }
+    if (params.file && params.version) {
+        error "Incompatible options: --file and --version cannot be used together (a single version cannot apply to a list of containers)"
+    }
+
+    // Input channel
     if (params.file) {
         names_ch = channel
             .fromPath(params.container)
             .splitText()
-            .map { name -> name.trim() }
+            .map { it.trim() }
             .filter { it }
     } else {
         names_ch = channel.value(params.container)
     }
 
-    //Add options
-    version_ch = channel.value(params.version ?: '')
     profile_ch = channel.value(params.profile)
     config_ch  = channel.fromPath("${projectDir}/scripts/config_mm.sh")
 
-    // Chain the processes; branch [ERR] lines from GET_URI past BUILD_CONTAINER
-    GET_URI(names_ch, version_ch)
-        .map { it.trim() }
-        .branch {
-            err:   it.startsWith('[ERR]')
-            valid: true
-        }
-        .set { uri_ch }
-
-    if (params.uri_only) {
-        uri_status_ch = uri_ch.valid.map { "[OK] URI resolved: ${it}" }
-        status_ch = uri_status_ch.mix(uri_ch.err).collect()
+    // Phase 1: URI resolution
+    if (params.from_uri) {
+        // input is already a docker:// URI — pass straight through
+        uri_valid_ch = names_ch
+        uri_err_ch   = Channel.empty()
     } else {
-        status_ch = BUILD_CONTAINER(uri_ch.valid, profile_ch, config_ch).map { it.trim() }
-                        .mix(uri_ch.err).collect()
+        version_ch = channel.value(params.version ?: '')
+        GET_URI(names_ch, version_ch)
+            .map { it.trim() }
+            .branch {
+                err:   it.startsWith('[ERR]')
+                valid: true
+            }
+            .set { uri_ch }
+        uri_valid_ch = uri_ch.valid
+        uri_err_ch   = uri_ch.err
     }
 
-    SUMMARIZE(status_ch).summary.view()
+    // Phase 2: build or log-only
+    if (params.uri_only) {
+        result_ch = uri_valid_ch.map { "[OK] URI resolved: ${it}" }
+    } else {
+        result_ch = BUILD_CONTAINER(uri_valid_ch, profile_ch, config_ch).map { it.trim() }
+    }
+
+    SUMMARIZE(result_ch.mix(uri_err_ch).collect()).summary.view()
 }
