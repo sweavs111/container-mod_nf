@@ -1,6 +1,6 @@
 # container-mod-nf
 
-A Nextflow DSL2 pipeline that installs Apptainer/Singularity containers onto an HPC module space using [`container-mod`](https://github.com/biocorecrg/container-mod). It resolves Docker image URIs by querying three sources in order — the [BioContainers API](https://api.biocontainers.pro), the [quay.io](https://quay.io) biocontainers registry, and Docker Hub — then calls `container-mod pipe` to pull and register them as environment modules.
+A Nextflow DSL2 pipeline that installs Apptainer/Singularity containers onto an HPC module space using [container-mod](https://github.com/TuftsRT/container-mod). It resolves Docker image URIs by querying three sources in order — the [BioContainers API](https://api.biocontainers.pro), the [quay.io biocontainers](https://quay.io) registry, and the [Docker Hub biocontainers](https://hub.docker.com/u/biocontainers) registry — then calls `container-mod pipe` to pull and register them as environment modules.
 
 Built for the BRC module space on the Hazel HPC cluster at NC State.
 
