@@ -50,7 +50,7 @@ def parse_quay(data, tool, version_filter):
     return candidates
 
 
-def parse_dockerhub(data, tool, version_filter):
+def parse_dockerhub(data, tool, org, version_filter):
     candidates = []
     for result in data.get("results", []):
         tag_name = result.get("name", "")
@@ -58,7 +58,7 @@ def parse_dockerhub(data, tool, version_filter):
             continue
         if version_filter and not tag_name.startswith(version_filter):
             continue
-        image_name = f"biocontainers/{tool}:{tag_name}"
+        image_name = f"{org}/{tool}:{tag_name}"
         candidates.append((tag_name, image_name))
     return candidates
 
@@ -68,6 +68,7 @@ def main():
     parser.add_argument("version", nargs="?", default="")
     parser.add_argument("--source", choices=["biocontainers", "quay", "dockerhub"], default="biocontainers")
     parser.add_argument("--tool", default="")
+    parser.add_argument("--org", default="biocontainers")
     args = parser.parse_args()
 
     data = json.load(sys.stdin)
@@ -81,7 +82,7 @@ def main():
         if not args.tool:
             print("Error: --tool required with --source dockerhub", file=sys.stderr)
             sys.exit(1)
-        candidates = parse_dockerhub(data, args.tool, args.version)
+        candidates = parse_dockerhub(data, args.tool, args.org, args.version)
     else:
         candidates = parse_biocontainers(data, args.version)
 

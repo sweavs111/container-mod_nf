@@ -37,16 +37,19 @@ try_quay() {
 }
 
 try_dockerhub() {
-  local RESPONSE
+  local RESPONSE ORG
   # try biocontainers first
   RESPONSE=$(curl -sf "${DOCKERHUB_API}/biocontainers/${TOOL}/tags/?page_size=100")
   if [ -z "$RESPONSE" ]; then
-  # if that didn't return anything, try the staphb repo
+    # if that didn't return anything, try the staphb repo
     RESPONSE=$(curl -sf "${DOCKERHUB_API}/staphb/${TOOL}/tags/?page_size=100") || return 1
+    ORG="staphb"
+  else
+    ORG="biocontainers"
   fi
   [ -n "$RESPONSE" ] || return 1
   echo "$RESPONSE" | python3 "${SCRIPT_DIR}/parse_biocontainer.py" \
-    --source dockerhub --tool "${TOOL}" "${VERSION}"
+    --source dockerhub --tool "${TOOL}" --org "${ORG}" "${VERSION}"
 }
 
 # --- Main: try each source in order, suppress per-source stderr ---
