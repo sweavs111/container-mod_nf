@@ -12,9 +12,11 @@ if [ -z "$TOOL" ]; then
   exit 1
 fi
 
+# --- API ---
 BIOCONTAINERS_API="https://api.biocontainers.pro/ga4gh/trs/v2/tools"
 QUAY_API="https://quay.io/api/v1/repository/biocontainers"
-DOCKERHUB_API="https://hub.docker.com/v2/repositories/biocontainers"
+DOCKERHUB_API="https://hub.docker.com/v2/repositories"
+# -----------
 
 try_biocontainers() {
   local RESPONSE
@@ -36,8 +38,11 @@ try_quay() {
 
 try_dockerhub() {
   local RESPONSE
-  RESPONSE=$(curl -sf "${DOCKERHUB_API}/${TOOL}/tags/?page_size=100") || return 1
-  [ -n "$RESPONSE" ] || return 1
+  RESPONSE=$(curl -sf "${DOCKERHUB_API}/biocontainers/${TOOL}/tags/?page_size=100") || return 1 # first try the biocontainers repo
+  if [ ! -n "$RESPONSE" ]; then
+    RESPONSE=$(curl -sf "${DOCKERHUB_API}/staphb/${TOOL}/tags/?page_size=100") || return 1
+    [ -n "$RESPONSE" ] || return 1
+  fi
   echo "$RESPONSE" | python3 "${SCRIPT_DIR}/parse_biocontainer.py" \
     --source dockerhub --tool "${TOOL}" "${VERSION}"
 }
