@@ -38,11 +38,13 @@ try_quay() {
 
 try_dockerhub() {
   local RESPONSE
-  RESPONSE=$(curl -sf "${DOCKERHUB_API}/biocontainers/${TOOL}/tags/?page_size=100") || return 1 # first try the biocontainers repo
-  if [ ! -n "$RESPONSE" ]; then
+  # try biocontainers first
+  RESPONSE=$(curl -sf "${DOCKERHUB_API}/biocontainers/${TOOL}/tags/?page_size=100")
+  if [ -z "$RESPONSE" ]; then
+  # if that didn't return anything, try the staphb repo
     RESPONSE=$(curl -sf "${DOCKERHUB_API}/staphb/${TOOL}/tags/?page_size=100") || return 1
-    [ -n "$RESPONSE" ] || return 1
   fi
+  [ -n "$RESPONSE" ] || return 1
   echo "$RESPONSE" | python3 "${SCRIPT_DIR}/parse_biocontainer.py" \
     --source dockerhub --tool "${TOOL}" "${VERSION}"
 }
