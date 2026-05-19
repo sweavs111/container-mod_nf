@@ -123,7 +123,7 @@ workflow {
     }
 
     profile_ch = channel.value(params.profile)
-    config_ch  = channel.fromPath("${projectDir}/scripts/config_mm.sh")
+    config_ch  = channel.value(file("${projectDir}/scripts/config_mm.sh"))
 
     // Phase 1: URI resolution
     if (params.from_uri) {
