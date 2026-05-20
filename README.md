@@ -35,7 +35,7 @@ nextflow run download_container.nf --container uris.txt --file --from_uri --log_
 | `--container` | Yes      | Container name (e.g. `samtools`) or path to a file listing containers       |
 | `--log_dir`   | Yes      | Directory where success/error log files will be written                     |
 | `--version`   | No       | Pin a specific tool version (default: latest available)                     |
-| `--profile`   | No       | `container-mod` profile to use (default: `brc_usr`)                             |
+| `--profile`   | No       | `container-mod` profile to use (default: `brc`)                             |
 | `--file`      | No       | Flag — treat `--container` as a file path rather than a container name      |
 | `--uri_only`  | No       | Flag — resolve URIs only; skip image download and log resolved URIs instead |
 | `--from_uri`  | No       | Flag — treat `--container` as a pre-formatted `docker://` URI; skip GET_URI |
