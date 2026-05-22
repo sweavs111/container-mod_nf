@@ -3,15 +3,14 @@ nextflow.enable.dsl=2
 
 process GET_URI {
     input:
-    val names // these can be used as CLI args with "${val_name}"
-    val version // package version can be specified, if not, latest is chosen
+    tuple val(name), val(version)
 
     output:
     stdout
 
     script:
     """
-    get_container_uri.sh "${names}" "${version}"
+    get_container_uri.sh "${name}" "${version}"
     """
 }
 
@@ -77,8 +76,11 @@ workflow {
         |
         | OPTIONAL:
         |   --version   <string>       Pin a specific tool version (default: latest)
+        |                              Not compatible with --file; use per-line versions instead
         |   --profile   <string>       container-mod profile to use (default: brc)
         |   --file                     Treat --container as a file path (flag, no value)
+        |                              Each line: container name, optionally followed by a
+        |                              whitespace-delimited version (e.g. "samtools 1.17")
         |   --uri_only                 Resolve URIs only; skip image download (flag, no value)
         |   --from_uri                 Treat --container as a pre-formatted URI or file of URIs;
         |                              skip GET_URI (flag, no value)
@@ -88,6 +90,7 @@ workflow {
         |   nextflow run download_container.nf --container samtools --log_dir logs/
         |   nextflow run download_container.nf --container samtools --version 1.17 --log_dir logs/
         |   nextflow run download_container.nf --container containers.txt --file --log_dir logs/
+        |   # containers.txt can include per-line versions: "samtools 1.17"
         |==================================================
         """.stripMargin()
         exit 0
@@ -108,18 +111,23 @@ workflow {
         error "Incompatible options: --from_uri and --version cannot be used together (version is already encoded in the URI)"
     }
     if (params.file && params.version) {
-        error "Incompatible options: --file and --version cannot be used together (a single version cannot apply to a list of containers)"
+        error "Incompatible options: --file and --version cannot be used together. To pin a version in batch mode, add it after the container name in the file (e.g. 'samtools 1.17')"
     }
 
-    // Input channel
+    // Input channel — always [name, version] tuples
+    // File mode: version parsed from each line ("samtools 1.17" → ["samtools", "1.17"])
+    // Single mode: version from --version flag (or empty string for latest)
     if (params.file) {
         names_ch = channel
             .fromPath(params.container)
             .splitText()
-            .map { it.trim() }
-            .filter { it }
+            .map { line ->
+                def parts = line.trim().split(/\s+/)
+                [parts[0], parts.size() > 1 ? parts[1] : '']
+            }
+            .filter { it[0] }
     } else {
-        names_ch = channel.value(params.container)
+        names_ch = channel.value([params.container, params.version ?: ''])
     }
 
     profile_ch = channel.value(params.profile)
@@ -127,12 +135,11 @@ workflow {
 
     // Phase 1: URI resolution
     if (params.from_uri) {
-        // input is already a docker:// URI — pass straight through
-        uri_valid_ch = names_ch
+        // input is already a docker:// URI — strip version tuple, pass URIs straight through
+        uri_valid_ch = names_ch.map { it[0] }
         uri_err_ch   = Channel.empty()
     } else {
-        version_ch = channel.value(params.version ?: '')
-        GET_URI(names_ch, version_ch)
+        GET_URI(names_ch)
             .map { it.trim() }
             .branch {
                 err:   it.startsWith('[ERR]')
