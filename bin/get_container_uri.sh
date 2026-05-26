@@ -5,7 +5,6 @@ set -uo pipefail
 
 TOOL="${1:-}"
 VERSION="${2:-}"
-SCRIPT_DIR="$(dirname "$0")"
 
 if [ -z "$TOOL" ]; then
   echo "Usage: $0 <tool> [version]" >&2
@@ -23,7 +22,7 @@ try_biocontainers() {
   RESPONSE=$(curl -sf "${BIOCONTAINERS_API}/${TOOL}/versions") || return 1
   [ -n "$RESPONSE" ] || return 1
   echo "$RESPONSE" | grep -q '"detail"' && return 1
-  echo "$RESPONSE" | python3 "${SCRIPT_DIR}/parse_biocontainer.py" \
+  echo "$RESPONSE" | parse_biocontainer.py \
     --source biocontainers "${VERSION}"
 }
 
@@ -32,7 +31,7 @@ try_quay() {
   RESPONSE=$(curl -sf "${QUAY_API}/${TOOL}/tag/?limit=100&onlyActiveTags=true") || return 1
   [ -n "$RESPONSE" ] || return 1
   echo "$RESPONSE" | grep -q '"error_message"' && return 1
-  echo "$RESPONSE" | python3 "${SCRIPT_DIR}/parse_biocontainer.py" \
+  echo "$RESPONSE" | parse_biocontainer.py \
     --source quay --tool "${TOOL}" "${VERSION}"
 }
 
@@ -48,7 +47,7 @@ try_dockerhub() {
     ORG="biocontainers"
   fi
   [ -n "$RESPONSE" ] || return 1
-  echo "$RESPONSE" | python3 "${SCRIPT_DIR}/parse_biocontainer.py" \
+  echo "$RESPONSE" | parse_biocontainer.py \
     --source dockerhub --tool "${TOOL}" --org "${ORG}" "${VERSION}"
 }
 
