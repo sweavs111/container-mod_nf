@@ -34,7 +34,7 @@ check_exist() {
 # --- Download ---
 if check_exist "$URI"; then
     echo "[Already exists]  $URI"
-elif OUTPUT=$($CONTAINER_MOD pipe -t --profile "$MY_PROFILE" "$URI" 2>&1); then
+elif OUTPUT=$($CONTAINER_MOD pipe -t --profile --update "$MY_PROFILE" "$URI" 2>&1); then
     echo "[OK]  $URI"
 else
     echo "[ERR] $URI -- $OUTPUT"
