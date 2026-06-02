@@ -37,5 +37,10 @@ if check_exist "$URI"; then
 elif OUTPUT=$($CONTAINER_MOD pipe -t --profile "$MY_PROFILE" --update "$URI" 2>&1); then
     echo "[OK]  $URI"
 else
-    echo "[ERR] $URI -- $OUTPUT"
+    # container-mod exited non-zero — verify the image landed anyway before declaring failure
+    if check_exist "$URI"; then
+        echo "[OK]  $URI"
+    else
+        echo "[ERR] $URI -- $OUTPUT"
+    fi
 fi
