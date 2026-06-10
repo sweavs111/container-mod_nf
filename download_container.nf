@@ -29,6 +29,19 @@ process BUILD_CONTAINER {
     """
 }
 
+process PATCH_LOG_HOOK {
+    input:
+    val result
+
+    output:
+    stdout
+
+    script:
+    """
+    patch_log_hook.sh "${result}"
+    """
+}
+
 process SUMMARIZE {
     publishDir params.log_dir, mode: 'copy'
 
@@ -155,6 +168,7 @@ workflow {
         result_ch = uri_valid_ch.map { "[OK] URI resolved: ${it}" }
     } else {
         result_ch = BUILD_CONTAINER(uri_valid_ch, profile_ch, config_ch).map { it.trim() }
+        PATCH_LOG_HOOK(result_ch).filter { it.trim() }.view()
     }
 
     SUMMARIZE(result_ch.mix(uri_err_ch).collect()).summary.view()
