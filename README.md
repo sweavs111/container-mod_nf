@@ -75,6 +75,11 @@ download_container.nf
   │     bin/make_module.sh
   │     Calls `container-mod pipe` to pull the image and register it as a module
   │
+  ├── PATCH_LOG_HOOK  (skipped when --uri_only is set)
+  │     bin/patch_log_hook.sh
+  │     Appends a TCL load-logging block to the newly created module file
+  │     Patch status lines are printed to the terminal; idempotent (safe to re-run)
+  │
   └── SUMMARIZE
         Creates summary log files
         Prints summary statistics to terminal
@@ -96,6 +101,7 @@ download_container.nf
 | `bin/get_container_uri.sh`    | Queries BioContainers API, then quay.io, then Docker Hub in order; pipes JSON to `parse_biocontainer.py` |
 | `bin/parse_biocontainer.py`   | Parses the API response; handles both old (`_cvN`) and new (`--hash`) tag formats; returns the best-matching `docker://` URI |
 | `bin/make_module.sh`          | Sources `config_mm.sh`, checks if the `.sif` already exists, then calls `container-mod pipe` |
+| `bin/patch_log_hook.sh`       | Appends a TCL block to the module file that logs each `module load` event (timestamp, user, tool, version) to `/usr/local/usrapps/brc/brc_modules/logs/module_loads.log`; idempotent |
 
 ### Requirements
 
