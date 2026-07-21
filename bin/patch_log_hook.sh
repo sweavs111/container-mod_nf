@@ -41,11 +41,12 @@ if { [module-info mode load] } {
     catch {
         set _ts    [clock format [clock seconds] -format {%Y-%m-%dT%H:%M:%SZ} -gmt 1]
         set _user  $env(USER)
+        set _group $env(GROUP)
         set _parts [split [module-info name] /]
         set _tool  [lindex $_parts 0]
         set _ver   [lindex $_parts 1]
         set _fh    [open "/usr/local/usrapps/brc/brc_modules/logs/module_loads.log" a]
-        puts $_fh  "${_ts}|${_user}|${_tool}|${_ver}"
+        puts $_fh  "${_ts}|${_user}|${_group}|${_tool}|${_ver}"
         close $_fh
     }
 }

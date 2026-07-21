@@ -101,7 +101,7 @@ download_container.nf
 | `bin/get_container_uri.sh`    | Queries BioContainers API, then quay.io, then Docker Hub in order; pipes JSON to `parse_biocontainer.py` |
 | `bin/parse_biocontainer.py`   | Parses the API response; handles both old (`_cvN`) and new (`--hash`) tag formats; returns the best-matching `docker://` URI |
 | `bin/make_module.sh`          | Sources `config_mm.sh`, checks if the `.sif` already exists, then calls `container-mod pipe` |
-| `bin/patch_log_hook.sh`       | Appends a TCL block to the module file that logs each `module load` event (timestamp, user, tool, version) to `/usr/local/usrapps/brc/brc_modules/logs/module_loads.log`; idempotent |
+| `bin/patch_log_hook.sh`       | Appends a TCL block to the module file that logs each `module load` event (timestamp, user, group, tool, version) to `/usr/local/usrapps/brc/brc_modules/logs/module_loads.log`; idempotent |
 
 ### Requirements
 
