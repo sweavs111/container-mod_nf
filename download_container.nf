@@ -55,20 +55,40 @@ process SUMMARIZE {
     script:
     """
     TIMESTAMP=\$(date +%Y%m%d_%H%M%S)
-    touch "success.\${TIMESTAMP}.log" "error.\${TIMESTAMP}.log"
+    SUCCESS_LOG="success.\${TIMESTAMP}.log"
+    ERROR_LOG="error.\${TIMESTAMP}.log"
+    touch "\$SUCCESS_LOG" "\$ERROR_LOG"
 
-    while read -r line; do
-        case "\$line" in
-            \\[OK\\]*|\\[Already*)  echo "\$line" >> "success.\${TIMESTAMP}.log" ;;
-            \\[ERR\\]*)             echo "\$line" >> "error.\${TIMESTAMP}.log"   ;;
-        esac
-    done <<'RESULTS_EOF'
-${results.join('\n')}
+    # Each result may itself be multi-line (e.g. a captured tool error with
+    # several lines of context). Results are joined below with an explicit
+    # boundary marker so a whole result is classified and logged as one
+    # block by its first line, instead of splitting every embedded newline
+    # into its own "line" and silently dropping non-matching continuation
+    # lines (which was swallowing the real error text).
+    awk -v success="\$SUCCESS_LOG" -v error="\$ERROR_LOG" '
+        BEGIN { RS = "__NF_RESULT_BOUNDARY__" }
+        {
+            while (substr(\$0, 1, 1) == "\\n") \$0 = substr(\$0, 2)
+            while (length(\$0) > 0 && substr(\$0, length(\$0), 1) == "\\n") \$0 = substr(\$0, 1, length(\$0) - 1)
+            if (\$0 == "") next
+            split(\$0, lines, "\\n")
+            first = lines[1]
+            if (first ~ /^\\[OK\\]/ || first ~ /^\\[Already/) {
+                print \$0 >> success
+                ok++
+            } else if (first ~ /^\\[ERR\\]/) {
+                print \$0 >> error
+                err++
+            }
+        }
+        END {
+            print "=== DONE ==="
+            print "Successes: " ok+0
+            print "Errors:    " err+0
+        }
+    ' <<'RESULTS_EOF'
+${results.join('\n__NF_RESULT_BOUNDARY__\n')}
 RESULTS_EOF
-
-    echo "=== DONE ==="
-    echo "Successes: \$(wc -l < "success.\${TIMESTAMP}.log")"
-    echo "Errors:    \$(wc -l < "error.\${TIMESTAMP}.log")"
     """
 }
 
