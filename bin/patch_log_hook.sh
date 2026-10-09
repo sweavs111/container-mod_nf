@@ -1,5 +1,6 @@
 #!/bin/bash
-# patch_log_hook.sh — append the load-logging TCL hook to a freshly-built module file.
+# patch_log_hook.sh — append a `source` of the shared load-logging hook
+# (/usr/local/usrapps/brc/env/module_log.tcl) to a freshly-built module file.
 # Called by the PATCH_LOG_HOOK Nextflow process with the full BUILD_CONTAINER result line.
 
 set -uo pipefail
@@ -36,21 +37,8 @@ fi
 
 cat >> "$MODULE_FILE" << 'HOOK_EOF'
 
-#-- Log module load
-if { [module-info mode load] } {
-    catch {
-        set _ts    [clock format [clock seconds] -format {%Y-%m-%dT%H:%M:%S%z} -timezone :America/New_York]
-        set _ts    [regsub {(\d\d)$} $_ts {:\1}]
-        set _user  $env(USER)
-        set _group $env(GROUP)
-        set _parts [lrange [split [module-info name] /] end-1 end]
-        set _tool  [lindex $_parts 0]
-        set _ver   [lindex $_parts 1]
-        set _fh    [open "/usr/local/usrapps/brc/brc_modules/logs/module_loads.log" a]
-        puts $_fh  "${_ts}|${_user}|${_group}|${_tool}|${_ver}"
-        close $_fh
-    }
-}
+#-- Log module load (shared hook: edit /usr/local/usrapps/brc/env/module_log.tcl)
+source "/usr/local/usrapps/brc/env/module_log.tcl"
 HOOK_EOF
 
 echo "[OK] patched log hook: $APP/$VER"
